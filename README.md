@@ -29,3 +29,6 @@ E.g.:
 
 
 In NESS decision process, the proofs loop through all the nodes in the network having an entry in the table and an action A is issued for each.
+
+## Data simulator
+A [simulator](https://github.com/martin-tii/decision-engine/tree/master/ness_decision/input-simulator) was created to obtain data to test the decision engine
