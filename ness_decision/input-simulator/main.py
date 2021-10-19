@@ -4,6 +4,16 @@ import matplotlib.pyplot as plt
 import random
 from random import choices
 import pickle
+import argparse
+
+# Construct the argument parser
+ap = argparse.ArgumentParser()
+
+
+# Add the arguments to the parser
+ap.add_argument("-d", "--dataset", required=True, help="Dataset topology")
+args = ap.parse_args()
+
 
 def read_file(file):
     return nx.read_gml(file)
@@ -14,7 +24,7 @@ def plot(G):
     nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'), node_size=500)
     nx.draw_networkx_labels(G, pos)
     nx.draw_networkx_edges(G, pos, arrows=False)
-    plt.show()
+    plt.show(block=False)
 
 
 def get_neighbors(G):
@@ -25,7 +35,7 @@ def get_neighbors(G):
 
 
 def mapping(G):
-    #mapp = dict(zip(range(len(G.nodes())), G.nodes()))
+    # mapp = dict(zip(range(len(G.nodes())), G.nodes()))
     mapp = dict(zip(topo.nodes(), range(len(topo.nodes()))))
     print("Map node labels with ID ")
     print(mapp)
@@ -79,7 +89,7 @@ def create_tuple(G, num_mal):
 
 
 if __name__ == '__main__':
-    topo = read_file('ibm2011.gml')  # open file
+    topo = read_file(args.dataset)  # open file
     get_neighbors(topo)  # get the name neighbors (only to print)
     new_topo = mapping(topo)  # map names with IDs
     neighbors = get_neighbors(new_topo)  # now getting the real neighbors
@@ -90,5 +100,3 @@ if __name__ == '__main__':
     with open('output.data', 'wb') as filehandle:
         # store the data as binary data stream
         pickle.dump(output, filehandle, pickle.HIGHEST_PROTOCOL)
-
-
