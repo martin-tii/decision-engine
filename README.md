@@ -1,5 +1,5 @@
 # decision-engine
-###########################################################################################################
+########################################################################################
 #
 # This is the decision function of the Network Expert Security System (NESS) of the Mesh1.5 Security architecture.
 #
