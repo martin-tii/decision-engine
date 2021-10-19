@@ -4,6 +4,7 @@ import contextlib
 import sys
 import matplotlib.pyplot as plt
 from pyke import knowledge_engine, krb_traceback
+import pickle
 
 engine = knowledge_engine.engine(__file__)
 
@@ -97,13 +98,22 @@ def run_decision(latest_status_list, good_server_status_list, flags_list, server
     return action_code
 
 
-#
+def read_file(file):
+    with open(file, 'rb') as f:  # b for binary
+        obj = pickle.load(f)
+    return obj, len(obj)
+    #
 # Security list entry, total number of nodes and validation flag
 # each entry is a node: [node_num, [svr1, svr2, ..., svrk], [flg1, flg2, ..., flgk], status]]
 #
-T_struct = [[0, [1], [1], 1], [1, [0, 2], [1, 1], 1], [2, [0, 1], [1, 3], 3], [3, [2, 1], [1], 1],
-            [4, [0, 1], [2, 2], 2]]
-n = 5
+# T_struct = [[0, [1], [1], 1], [1, [0, 2], [1, 1], 1], [2, [0, 1], [1, 3], 3], [3, [2, 1], [1], 1],
+#             [4, [0, 1], [2, 2], 2]]
+# n = 5
+
+
+
+T_struct, n = read_file('input-simulator/output.data')
+
 n_list = []
 n_list.append(n)
 sec_table_valid = 1
@@ -119,15 +129,25 @@ init_flags_table = create_servers_flags_list(T_struct, n, p)
 
 fig, ax = plt.subplots()
 ax.set_axis_off()
+
+colLabels=[]
+
+for name in range(n):
+    colLabels.append('Node'+str(name))
 table = ax.table(
     cellText=init_latest_status_list1,
     #	rowLabels = [],
-    colLabels=['Node0', 'Node1', 'Node2', 'Node3', 'Node4'],
+    #colLabels=['Node0', 'Node1', 'Node2', 'Node3', 'Node4'],
+    colLabels=colLabels,
     #	rowColours =["palegreen"] * 5,
     #	colColours =["palegreen"] * 5,
     cellLoc='center',
     loc='upper left')
-ax.set_title('Derived Nodes Security Status table')
+table.auto_set_font_size(False)
+
+table.set_fontsize(30)
+
+ax.set_title('Derived Nodes Security Status Table')
 plt.show(block=False)
 
 #
@@ -151,8 +171,10 @@ if sec_table_valid == 1:
         #
         latest_status_list = tuple(init_latest_status_list)
         good_server_status_list = tuple(init_good_server_status_list)
-        flags_list = tuple(init_flags_table[i])
-        servers_list = tuple(init_servers_table[i])
+        #flags_list = tuple(init_flags_table[i])
+        #servers_list = tuple(init_servers_table[i])
+        flags_list = tuple(init_flags_table)
+        servers_list = tuple(init_servers_table)
         nt = tuple(n_list)
         it = tuple(i_list)
 

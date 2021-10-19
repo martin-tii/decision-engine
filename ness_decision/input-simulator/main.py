@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from random import choices
-import json
+import pickle
 
 def read_file(file):
     return nx.read_gml(file)
@@ -79,7 +79,7 @@ def create_tuple(G, num_mal):
 
 
 if __name__ == '__main__':
-    topo = read_file('geant2012.gml')  # open file
+    topo = read_file('ibm2011.gml')  # open file
     get_neighbors(topo)  # get the name neighbors (only to print)
     new_topo = mapping(topo)  # map names with IDs
     neighbors = get_neighbors(new_topo)  # now getting the real neighbors
@@ -87,5 +87,8 @@ if __name__ == '__main__':
     output = create_tuple(new_topo, int(val))
     print('Final List: ')
     print(output)
+    with open('output.data', 'wb') as filehandle:
+        # store the data as binary data stream
+        pickle.dump(output, filehandle, pickle.HIGHEST_PROTOCOL)
 
 
