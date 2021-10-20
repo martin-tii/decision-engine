@@ -103,13 +103,14 @@ def read_file(file):
         obj = pickle.load(f)
     return obj, len(obj)
     #
+
+
 # Security list entry, total number of nodes and validation flag
 # each entry is a node: [node_num, [svr1, svr2, ..., svrk], [flg1, flg2, ..., flgk], status]]
 #
 # T_struct = [[0, [1], [1], 1], [1, [0, 2], [1, 1], 1], [2, [0, 1], [1, 3], 3], [3, [2, 1], [1], 1],
 #             [4, [0, 1], [2, 2], 2]]
 # n = 5
-
 
 
 T_struct, n = read_file('input-simulator/output.data')
@@ -130,14 +131,14 @@ init_flags_table = create_servers_flags_list(T_struct, n, p)
 fig, ax = plt.subplots()
 ax.set_axis_off()
 
-colLabels=[]
+colLabels = []
 
 for name in range(n):
-    colLabels.append('Node'+str(name))
+    colLabels.append('Node' + str(name))
 table = ax.table(
     cellText=init_latest_status_list1,
     #	rowLabels = [],
-    #colLabels=['Node0', 'Node1', 'Node2', 'Node3', 'Node4'],
+    # colLabels=['Node0', 'Node1', 'Node2', 'Node3', 'Node4'],
     colLabels=colLabels,
     #	rowColours =["palegreen"] * 5,
     #	colColours =["palegreen"] * 5,
@@ -171,8 +172,8 @@ if sec_table_valid == 1:
         #
         latest_status_list = tuple(init_latest_status_list)
         good_server_status_list = tuple(init_good_server_status_list)
-        #flags_list = tuple(init_flags_table[i])
-        #servers_list = tuple(init_servers_table[i])
+        # flags_list = tuple(init_flags_table[i])
+        # servers_list = tuple(init_servers_table[i])
         flags_list = tuple(init_flags_table)
         servers_list = tuple(init_servers_table)
         nt = tuple(n_list)
