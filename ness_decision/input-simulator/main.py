@@ -5,6 +5,7 @@ import random
 from random import choices
 import pickle
 import argparse
+import time
 
 # Construct the argument parser
 ap = argparse.ArgumentParser()
@@ -43,9 +44,9 @@ def mapping(G):
 
 def create_flags(G, node, mal, uncertain):
     flags = []
-    population = [1, 3]  # possible flags
-    weight = [0.99, 0.01]  # 3 should have a very low probability
     if node not in mal:
+        population = [1, 3]  # possible flags
+        weight = [0.99, 0.01]  # 3 should have a very low probability
         for _ in range(len(list(nx.neighbors(G, node)))):
             flags.append(choices(population, weight)[0])
     else:
@@ -58,7 +59,8 @@ def create_flags(G, node, mal, uncertain):
 
 def gets_status(flags):
     voting = np.unique(flags, return_counts=True)
-    if flags.count(1) == flags.count(2) and -1 not in voting[0]:  # if equal number of occurrence between 1 and 2 then results is 3
+    if flags.count(1) == flags.count(2) and -1 not in voting[
+        0]:  # if equal number of occurrence between 1 and 2 then results is 3
         return 3
     if len(voting[0]) > 1:
         return voting[0][np.argmax(voting[1])]
@@ -82,8 +84,8 @@ def uncertain_node(G, malicious, num_disc):
         if node not in malicious:
             uncer.append(node)
             edges = list(G.edges(node))
-            for edge in range(len(edges)):
-                G.remove_edge(edges[edge][0], edges[edge][1])
+            for edge_ in edges:
+                G.remove_edge(edge_[0], edge_[1])
     print('Uncertain Nodes: ', uncer)
     return uncer
 
@@ -93,9 +95,7 @@ def create_tuple(G, num_mal, num_unc):
     mal = get_malicious(G, num_mal)
     uncertain = uncertain_node(G, mal, num_unc)
     for node in G.nodes():
-        aux = []
-        aux.append(node)
-        aux.append(list(G.neighbors(node)))
+        aux = [node, list(G.neighbors(node))]
         flags = create_flags(G, node, mal, uncertain)
         aux.append(flags)
         status = gets_status(flags)
@@ -110,12 +110,20 @@ if __name__ == '__main__':
     get_neighbors(topo)  # get the name neighbors (only to print)
     new_topo = mapping(topo)  # map names with IDs
     neighbors = get_neighbors(new_topo)  # now getting the real neighbors
-    val = input("Enter number of malicious nodes: ")
-    val2 = input("Enter number of uncertain/disconnected nodes: ")
-    output = create_tuple(new_topo, int(val), int(val2))
-    print('Final List: \n')
-    print('[node_num, [svr1, svr2, ..., svrk], [flg1, flg2, ..., flgk], status]]\n')
-    print(output)
-    with open('output.data', 'wb') as filehandle:
-        # store the data as binary data stream
-        pickle.dump(output, filehandle, pickle.HIGHEST_PROTOCOL)
+    cycles = 0
+    while True:
+        val = input("Enter number of malicious nodes: ")
+        val2 = input("Enter number of uncertain/disconnected nodes: ")
+        time.sleep(2)
+        output = create_tuple(new_topo, int(val), int(val2))
+        print('Final List: \n')
+        print('[node_num, [svr1, svr2, ..., svrk], [flg1, flg2, ..., flgk], status]]\n')
+        print(output)
+        cycles += 1
+        if cycles == 5: # we will do it by 5 times
+            # with open('output.data', 'wb') as filehandle:
+            #     # store the data as binary data stream
+            #     pickle.dump(output, filehandle, pickle.HIGHEST_PROTOCOL)
+            # instead of saving a file we can call the driver method and analyze it every cycle?
+            break
+
