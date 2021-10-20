@@ -134,7 +134,7 @@ ax.set_axis_off()
 colLabels = []
 
 for name in range(n):
-    colLabels.append('Node' + str(name))
+    colLabels.append('N' + str(name))
 table = ax.table(
     cellText=init_latest_status_list1,
     #	rowLabels = [],
@@ -146,9 +146,9 @@ table = ax.table(
     loc='upper left')
 table.auto_set_font_size(False)
 
-table.set_fontsize(30)
+table.set_fontsize(25)
 
-ax.set_title('Derived Nodes Security Status Table')
+ax.set_title('Derived Nodes Security Status Table', fontsize=30)
 plt.show(block=False)
 
 #
