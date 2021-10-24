@@ -48,9 +48,9 @@ def mapping(G):
 
 def create_flags(G, node, mal, uncertain):
     flags = []
-    population = [1, 3]  # possible flags
-    weight = [0.99, 0.01]  # 3 should have a very low probability
     if node not in mal:
+        population = [1, 3]  # possible flags
+        weight = [0.99, 0.01]  # 3 should have a very low probability
         for _ in range(len(list(nx.neighbors(G, node)))):
             flags.append(choices(population, weight)[0])
     else:
@@ -88,8 +88,8 @@ def uncertain_node(G, malicious, num_disc):
         if node not in malicious:
             uncer.append(node)
             edges = list(G.edges(node))
-            for edge in range(len(edges)):
-                G.remove_edge(edges[edge][0], edges[edge][1])
+            for edge_ in edges:
+                G.remove_edge(edge_[0], edge_[1])
     print('Uncertain Nodes: ', uncer)
     return uncer
 
@@ -99,9 +99,7 @@ def create_tuple(G, num_mal, num_unc):
     mal = get_malicious(G, num_mal)
     uncertain = uncertain_node(G, mal, num_unc)
     for node in G.nodes():
-        aux = []
-        aux.append(node)
-        aux.append(list(G.neighbors(node)))
+        aux = [node, list(G.neighbors(node))]
         flags = create_flags(G, node, mal, uncertain)
         aux.append(flags)
         status = gets_status(flags)
@@ -206,23 +204,9 @@ def run_decision(latest_status_list, good_server_status_list, flags_list, server
     return action_code
 
 
-if __name__ == '__main__':
-    # topo = read_file('datasets/geant2012.gml')  # open file
-    topo = read_file(args.dataset)  # open file
-    get_neighbors(topo)  # get the name neighbors (only to print)
-    new_topo = mapping(topo)  # map names with IDs
-    neighbors = get_neighbors(new_topo)  # now getting the real neighbors
-    val = input("Enter number of malicious nodes: ")
-    val2 = input("Enter number of uncertain/disconnected nodes: ")
-    output = create_tuple(new_topo, int(val), int(val2))
-    print('Final List: \n')
-    print('[node_num, [svr1, svr2, ..., svrk], [flg1, flg2, ..., flgk], status]]\n')
-    print(output)
-    with open('output.data', 'wb') as filehandle:
-        # store the data as binary data stream
-        pickle.dump(output, filehandle, pickle.HIGHEST_PROTOCOL)
+def run_all(output):
     T_struct = output
-    n = 40
+    n = len(T_struct)
     n_list = []
     n_list.append(n)
     sec_table_valid = 1
@@ -262,3 +246,21 @@ if __name__ == '__main__':
 
             act_code = run_decision(latest_status_list, good_server_status_list, flags_list, servers_list, nt, it)
             print("\nAction Code issued is ", act_code)
+
+
+if __name__ == '__main__':
+    # topo = read_file('datasets/geant2012.gml')  # open file
+    topo = read_file(args.dataset)  # open file
+    get_neighbors(topo)  # get the name neighbors (only to print)
+    new_topo = mapping(topo)  # map names with IDs
+    neighbors = get_neighbors(new_topo)  # now getting the real neighbors
+    val = input("Enter number of malicious nodes: ")
+    val2 = input("Enter number of uncertain/disconnected nodes: ")
+    output = create_tuple(new_topo, int(val), int(val2))
+    print('Final List: \n')
+    print('[node_num, [svr1, svr2, ..., svrk], [flg1, flg2, ..., flgk], status]]\n')
+    print(output)
+    run_all(output)
+    with open('output.data', 'wb') as filehandle:
+        # store the data as binary data stream
+        pickle.dump(output, filehandle, pickle.HIGHEST_PROTOCOL)
