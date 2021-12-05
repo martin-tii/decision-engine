@@ -7,7 +7,7 @@ The simulator takes as input a topology dataset (in .gml format) to obtain the n
 
 `pip3 install -r requirements.txt`
 
-## Execution
+## CA step Standalone Execution
 
 `python3 main.py -d <dataset.gml>`
 
@@ -20,3 +20,12 @@ The expected output for each node on program should be:
 
 The following diagram shows the execution of the program:
 ![](images/simulator.png)
+
+## Loop Simulator Execution
+
+`python3 main_CA_DE_loop.py -d <dataset.gml>`
+
+This simulator combines the CA step to the DE one and iterates over time based on the decision results. A GUI indicates the nodes status and displays the network topology evolution.
+
+The following diagram shows the execution of the program:
+![](images/CA_DE_loop_simulator.png)
