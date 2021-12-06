@@ -3,7 +3,7 @@ import pickle
 import random
 import sys
 from random import choices
-
+import itertools
 import PySimpleGUI as sg
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -328,29 +328,22 @@ def set_ui(simtime, ui_report_list ):
     net.from_nx(new_topo)
     net.show("example0.html")
     sg.change_look_and_feel('Dark Blue 3')
-    layout = [[sg.Text('Nodes Status View', font='Courier 14')],
-              [sg.Text(' ', font='Courier 11')],
-              [sg.Text('Status code:', font='Courier 11')],
-              [sg.Text('0 : Banned Node', font='Courier 11')],
-              [sg.Text('2 : Trusted Node', font='Courier 11')],
-              [sg.Text('4 : Uncertain Node', font='Courier 11')],
+    layout = [[sg.Text('Nodes Status View', font='Courier 14')], [sg.Text(' ', font='Courier 11')],
+              [sg.Text('Status code:', font='Courier 11')], [sg.Text('0 : Banned Node', font='Courier 11')],
+              [sg.Text('2 : Trusted Node', font='Courier 11')], [sg.Text('4 : Uncertain Node', font='Courier 11')],
               [sg.Text('5 : Unchecked Node', font='Courier 11')],
               [sg.Text('6 : Server trust issue with Node', font='Courier 11')],
               [sg.Text('7 : Inconsistent data for Unchecked Node', font='Courier 11')],
-              [sg.Text('9 : Suspected Malicious Node', font='Courier 11')],
-              [sg.Text(' ', font='Courier 11')]
-              ]
-    for i in range(shape[0]+1):
-        if i == 0:
-            layout.append([sg.Text(size=(5, 1), key='-LAZY' + str(i) + '-', font='Courier 11'), sg.Text('ms', font='Courier 11')])
-            layout.append([sg.Text(size=(60, 1), key='-LAZYC-', font='Courier 11')])
-        else:
-            layout.append([sg.Text(size=(60, 1), key='-LAZY' + str(i) + '-', font='Courier 11')])
+              [sg.Text('9 : Suspected Malicious Node', font='Courier 11')], [sg.Text(' ', font='Courier 11')],
+              [sg.Text(size=(5, 1), key='-LAZY0-', font='Courier 11'), sg.Text('ms', font='Courier 11')],
+              [sg.Text(size=(60, 1), key='-LAZYC-', font='Courier 11')]]
+    for i in range(shape[0]):
+        layout.append([sg.Text(size=(60, 1), key='-LAZY' + str(i+1) + '-', font='Courier 11')])
     layout.append([sg.Text(size=(60, 1), key='-LAZYS-', font='Courier 11')])
     layout.append([sg.Text(' ', font='Courier 11')])
     layout.append([sg.Button('Exit'), sg.Button('Cont')])
 
-    return sg.Window('Security Status', layout)
+    return sg.Window('Security Status', layout, finalize=True)
 
 
 def run_ui(window, ui_report_list, simtime, status_str='No Signaling', sim_status='Simulation Started'):
@@ -361,8 +354,11 @@ def run_ui(window, ui_report_list, simtime, status_str='No Signaling', sim_statu
             break
         window['-LAZY0-'].update(str(simtime))
         window['-LAZYC-'].update(status_str)
-        for i in range(1, shape[0]):
-            window['-LAZY'+str(i)+'-'].update(f'{"    ".join([str(int(ui_report_list[i][j])) for j in range(shape[1])])}')
+        s = '\xA0'
+        x = 0
+        for i in range(shape[0]):
+            window['-LAZY' + str(i+1) + '-'].update(s.join(['n' + str(x+j) + ':' + str(int(ui_report_list[i][j])) for j in range(shape[1])]))
+            x += shape[1]
         window['-LAZYS-'].update(sim_status)
         if event in (None, 'Exit'):
             window['-LAZYS-'].update("Simulation Ended")
@@ -502,7 +498,7 @@ def step_simulation(initial_n, ui_report_list):
                 for k in range(len(ui_level)):
                     if ui_level[k][0] == j:
                         ui_report_list_line.append(ui_level[k][1])
-        aux = np.array_split(ui_report_list_line,ui_report_list.shape[0])
+        aux = np.array_split(ui_report_list_line, ui_report_list.shape[0])
         for index in range(ui_report_list.shape[0]):
             ui_report_list[index] = aux[index]
         if security_res[1] == 0:
@@ -528,7 +524,8 @@ def get_matrix(n): #get matrix for any input (to print values)
     for i in range(2, 10):
         if n % i == 0:
             aux = i
-            size = n / aux
+            size = int(n / aux)
+
     matrix = np.zeros((int(size), aux))
     return matrix+2
 
