@@ -1,23 +1,21 @@
-import contextlib
+import argparse
+import pickle
+import random
 import sys
-from pyke import knowledge_engine, krb_traceback
+from random import choices
+
+import PySimpleGUI as sg
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-import matplotlib.pyplot as plt
-import random
-from random import choices
-import pickle
-import argparse
-import time
-import PySimpleGUI as sg
-import pyvis
+from pyke import knowledge_engine, krb_traceback
 from pyvis.network import Network
 
 # Construct the argument parser
 ap = argparse.ArgumentParser()
 
 # Add the arguments to the parser
-ap.add_argument("-d", "--dataset", required=True, help="Dataset topology")
+ap.add_argument("-d", "--dataset", required=True, help="Dataset Topology")
 args = ap.parse_args()
 
 engine = knowledge_engine.engine(__file__)
@@ -198,9 +196,8 @@ def bw_CA_eval(nodes_list):
     return bw_cnt
 
 
-def create_status_list(sec_list, n):
-    out = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0]
+def create_status_list(sec_list, n, original_n):
+    out = [0] * original_n
     for i in range(n):
         l = len(sec_list[i])
         out[sec_list[i][0]] = sec_list[i][l - 1]
@@ -325,46 +322,13 @@ def trust_eval(sec_analysis_results, n, G):
     return (eval_res)
 
 
-if __name__ == '__main__':
-    # topo = read_file('datasets/geant2012.gml')  # open file
-    banned_nodes = []
-    nattackmin = 2
-    ncases = 20
-    while True:
-        mal_nb_list = create_cases(0, ncases)
-        tcount = mal_nb_list.count(1) + mal_nb_list.count(2) + mal_nb_list.count(3) + mal_nb_list.count(4)
-        if tcount > nattackmin:
-            break
-    print("Stats of CA events - malicious nodes:\t", mal_nb_list)
-    while True:
-        unc_nb_list = create_cases(1, ncases)
-        tcount = unc_nb_list.count(1) + unc_nb_list.count(2) + unc_nb_list.count(3) + unc_nb_list.count(4)
-        if tcount > nattackmin:
-            break
-    print("Stats of CA events - unconnected nodes: ", unc_nb_list)
-
-    iteration_cnt = 0
-    iteration_cnt1 = 1
-    simtime = 0
-    itcnt = 0
-    total_bw_cnt = 0
-    total_node_seq_cnt = 0
-    old_n = 40
-    n = 40
-    simexcept = 0
-    ui_report_list = [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-                      [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-                      [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-                      [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
-    topo = read_file(args.dataset)  # open file
-    get_neighbors(topo)  # get the name neighbors (only to print)
-    new_topo = mapping(topo)  # map names with IDs
-    neighbors = get_neighbors(new_topo)  # now getting the real neighbors
-    net = Network()
+def set_ui(simtime, ui_report_list ):
+    shape = ui_report_list.shape
+    net = Network(height='90%', width='100%', heading='Simulation ' + str(simtime) + 'ms')
     net.from_nx(new_topo)
     net.show("example0.html")
     sg.change_look_and_feel('Dark Blue 3')
-    layout = [[sg.Text('Nodes status View', font='Courier 14')],
+    layout = [[sg.Text('Nodes Status View', font='Courier 14')],
               [sg.Text(' ', font='Courier 11')],
               [sg.Text('Status code:', font='Courier 11')],
               [sg.Text('0 : Banned Node', font='Courier 11')],
@@ -374,40 +338,62 @@ if __name__ == '__main__':
               [sg.Text('6 : Server trust issue with Node', font='Courier 11')],
               [sg.Text('7 : Inconsistent data for Unchecked Node', font='Courier 11')],
               [sg.Text('9 : Suspected Malicious Node', font='Courier 11')],
-              [sg.Text(' ', font='Courier 11')],
-              [sg.Text(size=(5, 1), key='-LAZY0-', font='Courier 11'), sg.Text('ms', font='Courier 11')],
-              [sg.Text(size=(60, 1), key='-LAZYC-', font='Courier 11')],
-              [sg.Text(size=(60, 1), key='-LAZY1-', font='Courier 11')],
-              [sg.Text(size=(60, 1), key='-LAZY2-', font='Courier 11')],
-              [sg.Text(size=(60, 1), key='-LAZY3-', font='Courier 11')],
-              [sg.Text(size=(60, 1), key='-LAZY4-', font='Courier 11')],
-              [sg.Text(size=(60, 1), key='-LAZYS-', font='Courier 11')],
-              [sg.Text(' ', font='Courier 11')],
-              [sg.Button('Exit'), sg.Button('Cont')]]
-    window = sg.Window('Security Status', layout)
+              [sg.Text(' ', font='Courier 11')]
+              ]
+    for i in range(shape[0]+1):
+        if i == 0:
+            layout.append([sg.Text(size=(5, 1), key='-LAZY' + str(i) + '-', font='Courier 11'), sg.Text('ms', font='Courier 11')])
+            layout.append([sg.Text(size=(60, 1), key='-LAZYC-', font='Courier 11')])
+        else:
+            layout.append([sg.Text(size=(60, 1), key='-LAZY' + str(i) + '-', font='Courier 11')])
+    layout.append([sg.Text(size=(60, 1), key='-LAZYS-', font='Courier 11')])
+    layout.append([sg.Text(' ', font='Courier 11')])
+    layout.append([sg.Button('Exit'), sg.Button('Cont')])
+
+    return sg.Window('Security Status', layout)
+
+
+def run_ui(window, ui_report_list, simtime, status_str='No Signaling', sim_status='Simulation Started'):
+    shape = ui_report_list.shape
     while True:  # Event Loop
         event, values = window.read(timeout=1000)  # Time in Milliseconds before returning
         if event in (None, 'Cont'):
             break
-        window['-LAZY0-'].update("0")
-        window['-LAZYC-'].update("No Signaling")
-        window['-LAZY1-'].update(f'{"    ".join([str(ui_report_list[0][i]) for i in range(10)])}')
-        window['-LAZY2-'].update(f'{"    ".join([str(ui_report_list[1][i]) for i in range(10)])}')
-        window['-LAZY3-'].update(f'{"    ".join([str(ui_report_list[2][i]) for i in range(10)])}')
-        window['-LAZY4-'].update(f'{"    ".join([str(ui_report_list[3][i]) for i in range(10)])}')
-        window['-LAZYS-'].update("Simulation Started")
+        window['-LAZY0-'].update(str(simtime))
+        window['-LAZYC-'].update(status_str)
+        for i in range(1, shape[0]):
+            window['-LAZY'+str(i)+'-'].update(f'{"    ".join([str(int(ui_report_list[i][j])) for j in range(shape[1])])}')
+        window['-LAZYS-'].update(sim_status)
+        if event in (None, 'Exit'):
+            window['-LAZYS-'].update("Simulation Ended")
+            window.close()
+            quit()
+            break
+
+
+def step_simulation(initial_n, ui_report_list):
     #
     # This is where the loop on CA events should start
     #
+    iteration_cnt = 0
+    iteration_cnt1 = 1
+    simtime = 0
+    itcnt = 0
+    total_bw_cnt = 0
+    total_node_seq_cnt = 0
+    old_n = initial_n  # this should be changed as parameter
+    simexcept = 0
+    n = initial_n
+
     while simtime < 20000 and simexcept == 0:
         print("\n#############################")
-        print("# Simulation time =", simtime, "ms")
+        print("# Simulation time = ", simtime, "ms")
         print("#############################\n")
         # val = input("Enter number of malicious nodes: ")
         val = mal_nb_list[iteration_cnt]
         # val2 = input("Enter number of uncertain/disconnected nodes: ")
         val2 = unc_nb_list[iteration_cnt1]
-        print("Current number of nodes =", n)
+        print("Current number of nodes = ", n)
         if (val + val2 + 4) > n:
             simexcept = 1
             print("\nNot enough nodes remaining in the network! Stopping Simulation...")
@@ -428,9 +414,9 @@ if __name__ == '__main__':
         sec_analysis_results = []
         ui_level = []
         n_list = []
-        n_list.append(40)
+        n_list.append(n)
         sec_table_valid = 1
-        init_latest_status_list = create_status_list(T_struct, n)
+        init_latest_status_list = create_status_list(T_struct, n, initial_n)
         init_latest_status_list1 = []
         init_latest_status_list1.append(init_latest_status_list)
         init_good_server_status_list = create_good_server_list(T_struct, n)
@@ -483,11 +469,11 @@ if __name__ == '__main__':
             banned_nodes.append(ban_list[j])
         if security_res[1] == 1:
             simtime = simtime + 100
-            print("\nFull instant BW consummed during this round (broadcast included) =", (10 * (inst_bw_cnt + 8)),
+            print("\nFull instant BW consumed during this round (broadcast included) =", (10 * (inst_bw_cnt + 8)),
                   "bytes/s")
         else:
             simtime = simtime + 1000
-            print("\nFull instant BW consummed during this round (broadcast included) =", (inst_bw_cnt + 8), "bytes/s")
+            print("\nFull instant BW consumed during this round (broadcast included) =", (inst_bw_cnt + 8), "bytes/s")
 
         sec_table_valid = 1
         old_n = n
@@ -499,26 +485,26 @@ if __name__ == '__main__':
         #
         # Updating Report windows
         #
-        net = Network()
+        net = Network(height='90%', width='100%', heading='Simulation ' + str(simtime) + 'ms')
         net.from_nx(new_topo)
-        filename = "example" + str(simtime) + ".html"
+        #        filename = "example" + str(simtime) + ".html"
         filename1 = "example" + str(simtime) + ".png"
-        net.show(filename)
-        ui_report_list = []
+        # net.show(filename)
+        net.show('example0.html')
         ui_report_list_line = []
         linecnt = 0
-        for j in range(40):
-            if (j % 10 == 0) and (j > 9):
-                ui_report_list.append(ui_report_list_line)
-                linecnt = linecnt + 1
-                ui_report_list_line = []
+        for j in range(initial_n):
+            if j == ui_report_list.shape[1]:
+                 linecnt = linecnt + 1
             if init_latest_status_list[j] == 0:
                 ui_report_list_line.append(0)
             else:
                 for k in range(len(ui_level)):
                     if ui_level[k][0] == j:
                         ui_report_list_line.append(ui_level[k][1])
-        ui_report_list.append(ui_report_list_line)
+        aux = np.array_split(ui_report_list_line,ui_report_list.shape[0])
+        for index in range(ui_report_list.shape[0]):
+            ui_report_list[index] = aux[index]
         if security_res[1] == 0:
             status_str = "No Signaling"
         else:
@@ -527,29 +513,52 @@ if __name__ == '__main__':
                 status_str = status_str + " - Banning nodes: "
                 for strl in range(len(security_res[0])):
                     status_str = status_str + str(security_res[0][strl]) + "  "
-        while True:  # Event Loop
-            event, values = window.read(timeout=1000)  # Time in Milliseconds before returning
-            if event in (None, 'Cont'):
-                break
-            window['-LAZY0-'].update(str(simtime))
-            window['-LAZYC-'].update(status_str)
-            window['-LAZY1-'].update(f'{"    ".join([str(ui_report_list[0][i]) for i in range(10)])}')
-            window['-LAZY2-'].update(f'{"    ".join([str(ui_report_list[1][i]) for i in range(10)])}')
-            window['-LAZY3-'].update(f'{"    ".join([str(ui_report_list[2][i]) for i in range(10)])}')
-            window['-LAZY4-'].update(f'{"    ".join([str(ui_report_list[3][i]) for i in range(10)])}')
-            window['-LAZYS-'].update("Simulation Running")
-            # window['-IMAGE-'].update(filename=filename1)
-        # time.sleep(5)
+        run_ui(window, ui_report_list, simtime, status_str, 'Simulation Running')
 
     print("\nTotal simulated time =", simtime, "ms, and number of iterations that were run =", itcnt)
-    print("\nAverage BW consummed during simulation =", int(1000 * total_bw_cnt / simtime), "bytes/s")
+    print("\nAverage BW consumed during simulation =", int(1000 * total_bw_cnt / simtime), "bytes/s")
     print("Average number of nodes per iteration =", int(total_node_seq_cnt / itcnt))
     print("Average BW consumed per node =", int(1000 * total_bw_cnt * itcnt / (simtime * total_node_seq_cnt)),
           "bytes/s")
     print("\nSIMULATION END")
-    while True:  # Event Loop
-        event, values = window.read(timeout=1000)  # Time in Milliseconds before returning
-        if event in (None, 'Exit'):
+
+
+def get_matrix(n): #get matrix for any input (to print values)
+    aux = 0
+    for i in range(2, 10):
+        if n % i == 0:
+            aux = i
+            size = n / aux
+    matrix = np.zeros((int(size), aux))
+    return matrix+2
+
+
+if __name__ == '__main__':
+    # topo = read_file('datasets/geant2012.gml')  # open file
+    banned_nodes = []
+    nattackmin = 2
+    ncases = 20
+    while True:
+        mal_nb_list = create_cases(0, ncases)
+        tcount = mal_nb_list.count(1) + mal_nb_list.count(2) + mal_nb_list.count(3) + mal_nb_list.count(4)
+        if tcount > nattackmin:
             break
-        window['-LAZYS-'].update("Simulation Ended")
-    window.close()
+    print("Stats of CA events - malicious nodes:\t", mal_nb_list)
+    while True:
+        unc_nb_list = create_cases(1, ncases)
+        tcount = unc_nb_list.count(1) + unc_nb_list.count(2) + unc_nb_list.count(3) + unc_nb_list.count(4)
+        if tcount > nattackmin:
+            break
+    print("Stats of CA events - unconnected nodes: ", unc_nb_list)
+
+    topo = read_file(args.dataset)  # open file
+    initial_n = len(topo.nodes)
+
+    get_neighbors(topo)  # get the name neighbors (only to print)
+    new_topo = mapping(topo)  # map names with IDs
+    neighbors = get_neighbors(new_topo)  # now getting the real neighbors
+
+    ui_report_list = get_matrix(initial_n)
+    window = set_ui(0, ui_report_list)
+    run_ui(window, ui_report_list, 0)
+    step_simulation(initial_n, ui_report_list)
